@@ -23,14 +23,14 @@ var initialStudents = [{ "province": "sevilla", "year": 2008, "gender": "male", 
     { "province": "granada", "year": 2010, "gender": "male", "popilliterate": 10.02, "pophigheducation": 81.99, "popinuniversity": 54.024 },
     { "province": "granada", "year": 2011, "gender": "female", "popilliterate": 23.86, "pophigheducation": 91.26, "popinuniversity": 22.905 },
     { "province": "granada", "year": 2011, "gender": "both", "popilliterate": 53.86, "pophigheducation": 191.26, "popinuniversity": 44.405 },
-    
+
     { "province": "cordoba", "year": 2008, "gender": "male", "popilliterate": 16.32, "pophigheducation": 182.9, "popinuniversity": 30.493 },
     { "province": "jaen", "year": 2008, "gender": "female", "popilliterate": 28.70, "pophigheducation": 97.06, "popinuniversity": 10.766 },
     { "province": "almeria", "year": 2008, "gender": "both", "popilliterate": 56.53, "pophigheducation": 378.78, "popinuniversity": 66.325 },
     { "province": "huelva", "year": 2010, "gender": "male", "popilliterate": 10.02, "pophigheducation": 81.99, "popinuniversity": 54.024 },
     { "province": "huelva", "year": 2011, "gender": "female", "popilliterate": 23.86, "pophigheducation": 91.26, "popinuniversity": 22.905 },
     { "province": "huelva", "year": 2011, "gender": "both", "popilliterate": 53.86, "pophigheducation": 191.26, "popinuniversity": 44.405 },
-    
+
     { "province": "malaga", "year": 2008, "gender": "male", "popilliterate": 16.32, "pophigheducation": 182.9, "popinuniversity": 30.493 },
     { "province": "malaga", "year": 2008, "gender": "female", "popilliterate": 28.70, "pophigheducation": 97.06, "popinuniversity": 10.766 },
     { "province": "huelva", "year": 2008, "gender": "both", "popilliterate": 56.53, "pophigheducation": 378.78, "popinuniversity": 66.325 },
@@ -43,6 +43,7 @@ var initialStudents = [{ "province": "sevilla", "year": 2008, "gender": "male", 
 /*#I2------------------------------INICIALIZADOR---------------------------*/
 
 studentsApi.register = function(app, db) {
+    var ref2 = db.ref("students-an/students");
 
     console.log("Registering router for students API...")
     app.get(BASE_API_PATH + "/students-an/docs", (req, res) => {
@@ -51,7 +52,8 @@ studentsApi.register = function(app, db) {
 
     //CARGAR DATOS INICIALES
     app.get(BASE_API_PATH + "/students-an/loadInitialData", (req, res) => {
-        db.find({}, (err, students) => {
+        console.log("Load initial data");
+        /*db.find({}, (err, students) => {
             if (err) {
                 console.error(" Error accesing DB");
                 process.exit(1);
@@ -70,8 +72,26 @@ studentsApi.register = function(app, db) {
                 }
 
             });
+        });*/
+
+        db.ref('/students-an/students').once('value').then(function(snapshot) {
+            var noexists = (snapshot.val() == null);
+            if (noexists) {
+                console.log("Empty DB");
+                var usersRef = ref2.child("students-an");
+                usersRef.set({initialStudents});
+                res.sendStatus(201);
+            }else{
+                var usersRef = ref2.child("students-an");
+                console.log("DB initialized");
+                res.sendStatus(200);
+                
+            }
+
         });
     });
+    /* var usersRef = ref2.child("students-an");
+usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popilliterate": 16.32, "pophigheducation": 182.9, "popinuniversity": 30493 });*/
     /*#MP------------------------------METODOS PERMITIDOS---------------------------*/
 
 

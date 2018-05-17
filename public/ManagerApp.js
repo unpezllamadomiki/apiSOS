@@ -30,46 +30,5 @@ angular
                 templateUrl: "studentPartner.html",
                 controller: "studentPartnerCtrl"
                 
-            })
-             .when("/divorces-an",{
-                templateUrl: "divorceList.html",
-                controller: "divorceListCtrl"
-            })
-            .when("/divorces-an/:province/:year/",{
-                templateUrl: "divorceEdit.html",
-                controller: "divorceEditCtrl"
-            })
-            
-            .when("/divorces-an/stadistics",{
-                templateUrl: "divorceView.html",
-                controller: "divorceViewtCtrl"
-            })
-            .when("/divorces-an/shared",{
-                templateUrl: "divorceShared.html",
-                controller: "divorceSharedCtrl"
-            })
-            .when("/crimes-an",{
-                templateUrl: "listCrimes.html",
-                controller: "ListCtrl"
-            })
-            .when("/crimes-an/:province/:year/:gender",{
-                templateUrl: "editCrimes.html",
-                controller: "EditCtrl"
-            })
-            .when("/crimesView",{
-                templateUrl: "crimesView.html",
-                controller: "ViewCtrl"
-            })
-            .when("/crimesView2",{
-                templateUrl: "crimesView2.html",
-                controller: "ViewCtrl2"
-            })
-            .when("/crimesView3",{
-                templateUrl: "crimesView3.html",
-                controller: "ViewCtrl3"
-            })
-            .when("/crimesIntegration",{
-                templateUrl: "crimesIntegration.html",
-                controller: "ViewCtrl4"
             });
     });
