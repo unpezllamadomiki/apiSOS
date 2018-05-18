@@ -7,7 +7,6 @@ var cors = require("cors");
 var request = require('request');
 var admin = require('firebase-admin');
 var serviceAccount = require('./serviceAccount.json');
-var functions = require('firebase-functions');
 
 var students = require("./studentsApi");
 
@@ -18,7 +17,6 @@ var dbFileName = __dirname + "/students.db";
 
 
 var app = express();
-exports.app = functions.https.onrequest(app);
 
 
 
