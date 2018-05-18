@@ -16,6 +16,8 @@ module.exports = studentsApi;
 #PO -----> POST NO PERMITIDOS
 */
 
+
+
 /*#I1------------------------------INSERCION INICIAL---------------------------*/
 var initialStudents = [{ "province": "sevilla", "year": 2008, "gender": "male", "popilliterate": 16.32, "pophigheducation": 182.9, "popinuniversity": 30.493 },
     { "province": "cadiz", "year": 2008, "gender": "female", "popilliterate": 28.70, "pophigheducation": 97.06, "popinuniversity": 10.766 },
@@ -43,8 +45,43 @@ var initialStudents = [{ "province": "sevilla", "year": 2008, "gender": "male", 
 /*#I2------------------------------INICIALIZADOR---------------------------*/
 
 studentsApi.register = function(app, db) {
-    var ref2 = db.ref("students-an/students");
+    var ref = db.collection('students-an');
+    
+/*    function paginateQuery(db, limit) {
+    // [START cursor_paginate]
+    var first = ref
+        .orderBy('popilliterate')
+        .limit(limit);
 
+    var paginate = first.get()
+        .then((snapshot) => {
+            // ...
+
+            // Get the last document
+            var last = snapshot.docs[snapshot.docs.length - 1];
+
+            // Construct a new query starting at this document.
+            // Note: this will not have the desired effect if multiple
+            // cities have the exact same population value.
+            var next = ref
+                .orderBy('popilliterate')
+                .startAfter(last.data().popilliterate)
+                .limit(limit);
+
+            // Use the query for pagination
+            // [START_EXCLUDE]
+            return next.get().then((snapshot) => {
+                console.log('Num results:', snapshot.docs.length);
+            });
+            // [END_EXCLUDE]
+        });
+    // [END cursor_paginate]
+
+    return paginate;
+}
+
+    console.log(paginateQuery(db,10))*/
+    
     console.log("Registering router for students API...")
     app.get(BASE_API_PATH + "/students-an/docs", (req, res) => {
         res.redirect("https://documenter.getpostman.com/view/3891289/sos1718-08-students-an/RW1XKMBs");
@@ -53,45 +90,26 @@ studentsApi.register = function(app, db) {
     //CARGAR DATOS INICIALES
     app.get(BASE_API_PATH + "/students-an/loadInitialData", (req, res) => {
         console.log("Load initial data");
-        /*db.find({}, (err, students) => {
-            if (err) {
-                console.error(" Error accesing DB");
-                process.exit(1);
-                return;
-            }
-            db.find({}).toArray((err, students) => {
-                if (students.length == 0) {
-                    console.log("Empty DB");
-                    db.insert(initialStudents);
-                    res.sendStatus(201);
 
-                }
-                else {
-                    console.log("DB initialized with " + students.length + " students");
-                    res.sendStatus(200);
-                }
-
-            });
-        });*/
-
-        db.ref('/students-an/students').once('value').then(function(snapshot) {
-            var noexists = (snapshot.val() == null);
+        ref.get().then(function(snapshot) {
+            var noexists = (snapshot._size == 0);
             if (noexists) {
-                console.log("Empty DB");
-                var usersRef = ref2.child("students-an");
-                usersRef.set({initialStudents});
+                for (var i = 0; i < initialStudents.length; i++) {
+                    var addDoc = ref.add(initialStudents[i]).then(ref => {
+                        console.log('Added document with ID: ', ref.id);
+                    });
+
+                }
                 res.sendStatus(201);
-            }else{
-                var usersRef = ref2.child("students-an");
+            }
+            else {
                 console.log("DB initialized");
                 res.sendStatus(200);
-                
             }
 
         });
     });
-    /* var usersRef = ref2.child("students-an");
-usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popilliterate": 16.32, "pophigheducation": 182.9, "popinuniversity": 30493 });*/
+
     /*#MP------------------------------METODOS PERMITIDOS---------------------------*/
 
 
@@ -100,7 +118,11 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
     //GET A TODOS LOS RECURSOS
     app.get(BASE_API_PATH + "/students-an", (req, res) => {
         console.log(Date() + " - GET /students-an");
-        var limit = parseInt(req.query.limit);
+        var limit = 0;
+        if (req.query.limit != null) {
+            var limit = parseInt(req.query.limit);
+        }
+
         var offset = parseInt(req.query.offset);
 
         //BUSQUEDA
@@ -112,283 +134,198 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
         var popilliterate = Number(req.query.popilliterate);
         var pophigheducation = Number(req.query.pophigheducation);
         var popinuniversity = Number(req.query.popinuniversity);
+        var respuesta = []
 
-        if (popilliterate && pophigheducation && popinuniversity) {
-            db.find({ "popilliterate": popilliterate, "pophigheducation": pophigheducation, "popinuniversity": popinuniversity }).skip(offset).limit(limit).toArray((err, results) => {
-                if (err) {
-                    console.error("Error accesing DB");
-                    res.sendStatus(500);
-                    return;
-                }
-                if (results.length == 0) {
-                    console.log("Empty DB")
-                    res.sendStatus(404);
-                    return;
-                }
-                res.send(results.map((c) => {
-                    delete c._id;
-                    return c;
-                }));
-            });
-        }
-        else {
-            if (afrom && ato && province && gender) {
-                db.find({ "year": { "$gte": afrom, "$lte": ato }, "province": province, "gender": gender }).skip(offset).limit(limit).toArray((err, results) => {
-                    if (err) {
-                        console.error("Error accesing DB");
-                        res.sendStatus(500);
-                        return;
-                    }
-                    if (results.length == 0) {
-                        console.log("Empty DB")
-                        res.sendStatus(404);
-                        return;
-                    }
-                    res.send(results.map((c) => {
-                        delete c._id;
-                        return c;
-                    }));
-                });
 
-            }
-            else {
 
-                if (afrom && ato && gender) {
-                    db.find({ "year": { "$gte": afrom, "$lte": ato }, "gender": gender }).skip(offset).limit(limit).toArray((err, results) => {
-                        if (err) {
-                            console.error("Error accesing DB");
-                            res.sendStatus(500);
-                            return;
-                        }
-                        if (results.length == 0) {
-                            console.log("Empty DB")
-                            res.sendStatus(404);
-                            return;
-                        }
-                        res.send(results.map((c) => {
-                            delete c._id;
-                            return c;
-                        }));
+        if (afrom && ato) {
+            var query = ref.orderBy('province').startAfter(afrom).endAt(ato).get()
+                .then(snapshot => {
+                    snapshot.forEach(doc => {
+                        //console.log(doc.id, '=>', doc.data());
+                        respuesta.push(doc.data());
+
                     });
-
-                }
-                else {
-                    if (afrom && ato && province) {
-                        db.find({ "year": { "$gte": afrom, "$lte": ato }, "province": province }).skip(offset).limit(limit).toArray((err, results) => {
-                            if (err) {
-                                console.error("Error accesing DB");
-                                res.sendStatus(500);
-                                return;
-                            }
-                            if (results.length == 0) {
-                                console.log("Empty DB")
-                                res.sendStatus(404);
-                                return;
-                            }
-                            res.send(results.map((c) => {
-                                delete c._id;
-                                return c;
-                            }));
-                        });
-
+                    if (respuesta.length == 0) {
+                        res.send([]);
                     }
                     else {
+                        res.send(respuesta);
+                    }
 
-                        if (province && gender) {
-                            db.find({ "province": province, "gender": gender }).skip(offset).limit(limit).toArray((err, results) => {
-                                if (err) {
-                                    console.error("Error accesing DB");
-                                    res.sendStatus(500);
-                                    return;
-                                }
-                                if (results.length == 0) {
-                                    console.log("Empty DB")
-                                    res.sendStatus(404);
-                                    return;
-                                }
-                                res.send(results.map((c) => {
-                                    delete c._id;
-                                    return c;
-                                }));
-                            });
+                })
+                .catch(err => {
+                    console.log('Error getting documents', err);
+                    res.sendStatus(500);
+                });
 
+        }
+        else {
+            if (gender) {
+                var query = ref.where('gender', '==', gender).orderBy('year').startAfter(offset).limit(limit).get()
+                    .then(snapshot => {
+                        snapshot.forEach(doc => {
+                            //console.log(doc.id, '=>', doc.data());
+                            respuesta.push(doc.data());
+
+                        });
+                        if (respuesta.length == 0) {
+                            res.send([]);
                         }
                         else {
+                            res.send(respuesta);
+                        }
 
+                    })
+                    .catch(err => {
+                        console.log('Error getting documents', err);
+                        res.sendStatus(500);
+                    });
+            }
+            else {
+                if (province) {
+                    var query = ref.where('province', '==', province).orderBy('year').startAfter(offset).limit(limit).get()
+                        .then(snapshot => {
+                            snapshot.forEach(doc => {
+                                //console.log(doc.id, '=>', doc.data());
+                                respuesta.push(doc.data());
 
-                            if (afrom && ato) {
-
-                                db.find({ "year": { "$gte": afrom, "$lte": ato } }).skip(offset).limit(limit).toArray((err, results) => {
-                                    if (err) {
-                                        console.error("Error accesing DB");
-                                        res.sendStatus(500);
-                                        return;
-                                    }
-                                    if (results.length == 0) {
-                                        console.log("Empty DB")
-                                        res.sendStatus(404);
-                                        return;
-                                    }
-                                    res.send(results.map((c) => {
-                                        delete c._id;
-                                        return c;
-                                    }));
-                                });
+                            });
+                            if (respuesta.length == 0) {
+                                res.send([]);
                             }
                             else {
+                                res.send(respuesta);
+                            }
 
+                        })
+                        .catch(err => {
+                            console.log('Error getting documents', err);
+                            res.sendStatus(500);
+                        });
+                }
+                else {
+                    if (year) {
+                        var query = ref.where('year', '==', year).orderBy('year').startAfter(offset).limit(limit).get()
+                            .then(snapshot => {
+                                snapshot.forEach(doc => {
+                                    //console.log(doc.id, '=>', doc.data());
+                                    respuesta.push(doc.data());
 
-                                if (province) {
-                                    db.find({ "province": province }).skip(offset).limit(limit).toArray((err, results) => {
-                                        if (err) {
-                                            console.error("Error accesing DB");
-                                            res.sendStatus(500);
-                                            return;
-                                        }
-                                        if (results.length == 0) {
-                                            console.log("Empty DB")
-                                            res.sendStatus(404);
-                                            return;
-                                        }
-                                        res.send(results.map((c) => {
-                                            delete c._id;
-                                            return c;
-                                        }));
-                                    });
+                                });
+                                if (respuesta.length == 0) {
+                                    res.send([]);
                                 }
                                 else {
+                                    res.send(respuesta);
+                                }
 
-                                    if (gender) {
-                                        db.find({ "gender": gender }).skip(offset).limit(limit).toArray((err, results) => {
-                                            if (err) {
-                                                console.error("Error accesing DB");
-                                                res.sendStatus(500);
-                                                return;
-                                            }
-                                            if (results.length == 0) {
-                                                console.log("Empty DB")
-                                                res.sendStatus(404);
-                                                return;
-                                            }
-                                            res.send(results.map((c) => {
-                                                delete c._id;
-                                                return c;
-                                            }));
-                                        });
+                            })
+                            .catch(err => {
+                                console.log('Error getting documents', err);
+                                res.sendStatus(500);
+                            });
+                    }
+                    else {
+                        if (popilliterate) {
+                            var query = ref.where('popilliterate', '==', popilliterate).orderBy('year').startAfter(offset).limit(limit).get()
+                                .then(snapshot => {
+                                    snapshot.forEach(doc => {
+                                        //console.log(doc.id, '=>', doc.data());
+                                        respuesta.push(doc.data());
 
+                                    });
+                                    if (respuesta.length == 0) {
+                                        res.send([]);
                                     }
                                     else {
-                                        if (year) {
-                                            db.find({ "year": year }).skip(offset).limit(limit).toArray((err, results) => {
-                                                if (err) {
-                                                    console.error("Error accesing DB");
-                                                    res.sendStatus(500);
-                                                    return;
-                                                }
-                                                if (results.length == 0) {
-                                                    console.log("Empty DB")
-                                                    res.sendStatus(404);
-                                                    return;
-                                                }
-                                                res.send(results.map((c) => {
-                                                    delete c._id;
-                                                    return c;
-                                                }));
-                                            });
-
-                                        }
-                                        else {
-                                            if (popilliterate) {
-                                                db.find({ "popilliterate": popilliterate }).skip(offset).limit(limit).toArray((err, results) => {
-                                                    if (err) {
-                                                        console.error("Error accesing DB");
-                                                        res.sendStatus(500);
-                                                        return;
-                                                    }
-                                                    if (results.length == 0) {
-                                                        console.log("Empty DB")
-                                                        res.sendStatus(404);
-                                                        return;
-                                                    }
-                                                    res.send(results.map((c) => {
-                                                        delete c._id;
-                                                        return c;
-                                                    }));
-                                                });
-
-                                            }
-                                            else {
-                                                if (pophigheducation) {
-                                                    db.find({ "pophigheducation": pophigheducation }).skip(offset).limit(limit).toArray((err, results) => {
-                                                        if (err) {
-                                                            console.error("Error accesing DB");
-                                                            res.sendStatus(500);
-                                                            return;
-                                                        }
-                                                        if (results.length == 0) {
-                                                            console.log("Empty DB")
-                                                            res.sendStatus(404);
-                                                            return;
-                                                        }
-                                                        res.send(results.map((c) => {
-                                                            delete c._id;
-                                                            return c;
-                                                        }));
-                                                    });
-
-                                                }
-                                                else {
-                                                    if (popinuniversity) {
-                                                        db.find({ "popinuniversity": popinuniversity }).skip(offset).limit(limit).toArray((err, results) => {
-                                                            if (err) {
-                                                                console.error("Error accesing DB");
-                                                                res.sendStatus(500);
-                                                                return;
-                                                            }
-                                                            if (results.length == 0) {
-                                                                console.log("Empty DB")
-                                                                res.sendStatus(404);
-                                                                return;
-                                                            }
-                                                            res.send(results.map((c) => {
-                                                                delete c._id;
-                                                                return c;
-                                                            }));
-                                                        });
-
-                                                    }
-
-                                                    else {
-                                                        db.find({}).skip(offset).limit(limit).toArray((err, results) => {
-                                                            if (err) {
-                                                                console.error("Error accesing DB");
-                                                                res.sendStatus(500);
-                                                                return;
-                                                            }
-                                                            /*DELETE ALL*/
-                                                            if (results.length == 0) {
-                                                                console.log("Empty DB")
-                                                                res.sendStatus(200);
-                                                                return [];
-                                                            }
-                                                            res.send(results.map((c) => {
-                                                                delete c._id;
-                                                                return c;
-                                                            }));
-                                                        });
-                                                    }
-                                                }
-
-                                            }
-                                        }
+                                        res.send(respuesta);
                                     }
+
+                                })
+                                .catch(err => {
+                                    console.log('Error getting documents', err);
+                                    res.sendStatus(500);
+                                });
+                        }
+                    }
+                    if (pophigheducation) {
+                        var query = ref.where('pophigheducation', '==', pophigheducation).orderBy('year').startAfter(offset).limit(limit).get()
+                            .then(snapshot => {
+                                snapshot.forEach(doc => {
+                                   // console.log(doc.id, '=>', doc.data());
+                                    respuesta.push(doc.data());
+
+                                });
+                                if (respuesta.length == 0) {
+                                    res.send([]);
                                 }
-                            }
+                                else {
+                                    res.send(respuesta);
+                                }
+
+                            })
+                            .catch(err => {
+                                console.log('Error getting documents', err);
+                                res.sendStatus(500);
+                            });
+                    }
+                    else {
+                        if (popinuniversity) {
+                            var query = ref.where('popinuniversity', '==', popinuniversity).orderBy('year').startAfter(offset).limit(limit).get()
+                                .then(snapshot => {
+                                    snapshot.forEach(doc => {
+                                        //console.log(doc.id, '=>', doc.data());
+                                        respuesta.push(doc.data());
+
+                                    });
+                                    if (respuesta.length == 0) {
+                                        res.send([]);
+                                    }
+                                    else {
+                                        res.send(respuesta);
+                                    }
+
+                                })
+                                .catch(err => {
+                                    console.log('Error getting documents', err);
+                                    res.sendStatus(500);
+                                });
+                        }
+                        else {
+                            var cont=0;
+                            var limite=0;
+                            var query = ref.orderBy('province').get()
+                                .then(snapshot => {
+                                    var last = snapshot.docs[snapshot.docs.length - 1];
+                                    snapshot.forEach(doc => {
+                                       // console.log(doc.id, '=>', doc.data());
+                                       if(cont>=offset && limite < limit){
+                                        respuesta.push(doc.data());
+                                        limite +=1;
+                                       }
+                                       cont+=1;
+
+                                    });
+                                    if (respuesta.length == 0) {
+                                        res.send([]);
+                                    }
+                                    else {
+                                        res.send(respuesta);
+                                    }
+
+                                })
+                                .catch(err => {
+                                    console.log('Error getting documents', err);
+                                    res.sendStatus(500);
+                                });
                         }
                     }
                 }
             }
         }
+
+
 
 
 
@@ -396,119 +333,99 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
 
     //GET A UN SUBCONJUNTO DE RECURSOS
     app.get(BASE_API_PATH + "/students-an/:province", (req, res) => {
-        var province = req.params.province;
-        console.log(Date() + " - GET /students-an/" + province);
-        //PAGINACION
-        var limit = parseInt(req.query.limit);
+        var limit = 0;
+        if (req.query.limit != null) {
+            var limit = parseInt(req.query.limit);
+        }
         var offset = parseInt(req.query.offset);
+        var province = String(req.params.province);
 
-        db.find({ "province": province }).skip(offset).limit(limit).toArray((err, results) => {
-            if (err) {
-                console.error("Error accesing DB");
+        var respuesta = []
+        var query = ref.where('province', '==', province).orderBy('year').startAfter(offset).limit(limit).get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    //console.log(doc.id, '=>', doc.data());
+                    respuesta.push(doc.data());
+
+                });
+                if (respuesta.length == 0) {
+                    res.sendStatus(404);
+                }
+                else {
+                    res.send(respuesta);
+                }
+
+            })
+            .catch(err => {
+                console.log('Error getting documents', err);
                 res.sendStatus(500);
-                return;
-            }
-            if (results.length == 0) {
-                console.log("Not found")
-                res.sendStatus(404);
-                return;
-            }
-
-            res.send(results.map((c) => {
-                delete c._id;
-                return c;
-            }));
-        });
+            });
     });
 
     //GET A UN SUBCONJUNTO DE RECURSOS
     app.get(BASE_API_PATH + "/students-an/:province/:year", (req, res) => {
-        var province = req.params.province;
-        var year = Number(req.params.year);
-        console.log(Date() + " - GET /students-an/" + province + "/" + year);
-        var limit = parseInt(req.query.limit);
+        var limit = 0;
+        if (req.query.limit != null) {
+            var limit = parseInt(req.query.limit);
+        }
         var offset = parseInt(req.query.offset);
+        var province = String(req.params.province);
+        var year = Number(req.params.year);
 
-        db.find({ "province": province, "year": year }).skip(offset).limit(limit).toArray((err, results) => {
-            if (err) {
-                console.error("Error accesing DB");
+        var respuesta = []
+        var query = ref.where('province', '==', province).where('year', '==', year).orderBy('gender').startAfter(offset).limit(limit).get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    //console.log(doc.id, '=>', doc.data());
+                    respuesta.push(doc.data());
+
+                });
+                if (respuesta.length == 0) {
+                    res.sendStatus(404);
+                }
+                else {
+                    res.send(respuesta);
+                }
+
+            })
+            .catch(err => {
+                console.log('Error getting documents', err);
                 res.sendStatus(500);
-                return;
-            }
-            if (results.length == 0) {
-                console.log("Not found")
-                res.sendStatus(404);
-                return;
-            }
-
-            res.send(results.map((c) => {
-                delete c._id;
-                return c;
-            }));
-        });
+            });
     });
 
     //GET A UN RECURSO CONCRETO
     app.get(BASE_API_PATH + "/students-an/:province/:year/:gender", (req, res) => {
-        var province = req.params.province;
-        var year = Number(req.params.year);
+        var limit = 0;
+        if (req.query.limit != null) {
+            var limit = parseInt(req.query.limit);
+        }
+        var offset = parseInt(req.query.offset);
+        var province = String(req.params.province);
+        var year = parseInt(req.params.year);
         var gender = req.params.gender;
-        console.log(Date() + " - GET /students-an/" + province + "/" + year + "/" + gender);
 
-        db.find({ "province": province, "year": year, "gender": gender }).toArray((err, results) => {
-            if (err) {
-                console.error("Error accesing DB");
+        var respuesta = []
+        var query = ref.where('province', '==', province).where('year', '==', year).where('gender', '==', gender).orderBy('popilliterate').startAfter(offset).limit(limit).get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    console.log(doc.id, '=>', doc.data());
+                    respuesta.push(doc.data());
+
+                });
+                if (respuesta.length == 0) {
+                    res.sendStatus(404);
+                }
+                else {
+                    res.send(respuesta);
+                }
+
+            })
+            .catch(err => {
+                console.log('Error getting documents', err);
                 res.sendStatus(500);
-                return;
-            }
-
-            if (results.length == 0) {
-                console.log("Not found")
-                res.sendStatus(404);
-                return;
-            }
-
-            res.send(results.map((c) => {
-                delete c._id;
-                return c;
-            }));
-
-        });
+            });
     });
-    /*#I2------------------------------BUSQUEDAS---------------------------*/
-    /*  app.get(BASE_API_PATH + "/students-an?", (req, res) => {
-          var query = req.query
-          console.log(Date() + " - BUSQUEDA /students-an/");
-           if (req.query.province) {
-               query.province = Number(req.query.province);
-           }
-           if (req.query.year) {
-               query.year = Number(req.query.year);
-           }
-           if (req.query.gender) {
-               query.gender = Number(req.query.gender);
-           }
-
-          db.find(query).toArray((err, results) => {
-              if (err) {
-                  console.error("Error accesing DB");
-                  res.sendStatus(500);
-                  return;
-              }
-
-              if (results.length == 0) {
-                  console.log("Not found")
-                  res.sendStatus(404);
-                  return;
-              }
-
-              res.send(results.map((c) => {
-                  delete c._id;
-                  return c;
-              }));
-
-          });
-      });*/
 
     /*#PP------------------------------POST Y PUT PERMITIDOS---------------------------*/
 
@@ -516,52 +433,65 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
     app.post(BASE_API_PATH + "/students-an", (req, res) => {
         console.log(Date() + " - POST /students-an");
         var student = req.body;
+
         if (student.province == null || student.year == null || student.gender == null) {
             console.error("Invalid fields");
             res.sendStatus(400);
             return;
         }
 
-        db.find({ "province": student.province, "year": student.year, "gender": student.gender }).toArray((err, results) => {
-            if (err) {
-                console.error("Error accesing DB");
-                process.exit(1);
-            }
+        ref.where('province', '==', student.province).where('year', '==', student.year).where('gender', '==', student.gender).get().then(function(snapshot) {
+            var noexists = (snapshot._size == 0);
+            if (noexists) {
 
-            if (results.length == 0) {
-                db.insert(student);
-                console.log("Inserted element");
+                var addDoc = ref.add(student).then(ref => {
+                    console.log('Added document with ID: ', ref.id);
+                });
+
+
                 res.sendStatus(201);
             }
-
             else {
                 console.log("The resource already exists");
                 res.sendStatus(409);
-
             }
+
         });
 
     });
 
     //ACTUALIZAR UN RECURSO CONCRETO
     app.put(BASE_API_PATH + "/students-an/:province/:year/:gender", (req, res) => {
-        var province = req.params.province;
-        var year = Number(req.params.year)
-        var gender = req.params.gender
+        var provincep = req.params.province;
+        var yearp = Number(req.params.year)
+        var genderp = req.params.gender
         var student = req.body;
 
-        console.log(Date() + " - PUT /students-an/" + province + "/" + year + "/" + gender);
+        console.log(Date() + " - PUT /students-an/" + provincep + "/" + yearp + "/" + genderp);
 
-        if (province != student.province || year != student.year || gender != student.gender || isNaN(student.popilliterate) ||
+        if (provincep != student.province || yearp != student.year || genderp != student.gender || isNaN(student.popilliterate) ||
             isNaN(student.pophigheducation) || isNaN(student.popinuniversity)) {
             res.sendStatus(400);
             console.warn(Date() + "Invalid fields");
             return;
         }
-        db.update({ "province": student.province, "year": student.year, "gender": student.gender }, student, function(err, numUpdate) {
-            if (err) throw err;
-            console.log("Updated: " + numUpdate);
-        });
+        var query = ref.where('province', '==', provincep).where('year', '==', yearp).where('gender', '==', genderp).get()
+            .then(snapshot => {
+                snapshot.forEach(doc => {
+                    console.log("Este es el doc" + doc.id)
+                    ref.doc(doc.id).update({
+                        province: student.province,
+                        year: student.year,
+                        gender: student.gender,
+                        popilliterate: student.popilliterate,
+                        pophigheducation: student.pophigheducation,
+                        popinuniversity: student.popinuniversity
+                    });
+                });
+            })
+            .catch(err => {
+                console.log('Error getting documents', err);
+            });
         res.sendStatus(200);
     });
 
@@ -571,9 +501,14 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
     app.delete(BASE_API_PATH + "/students-an", (req, res) => {
         console.log(Date() + " - DELETE /students-an");
 
-        db.remove({});
+        var deleteDoc = ref.get().then(snapshot => {
+            snapshot.forEach(doc => {
+                ref.doc(doc.id).delete();
+            })
+        })
 
         res.sendStatus(200);
+        
     });
 
     //Borrar un subconjunto de recursos
@@ -581,7 +516,11 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
         var province = req.params.province;
         console.log(Date() + " - DELETE /students-an/" + province);
 
-        db.remove({ "province": province });
+        var deleteDoc = ref.where('province', '==', province).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                ref.doc(doc.id).delete();
+            })
+        })
 
         res.sendStatus(200);
     });
@@ -592,7 +531,11 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
         var year = Number(req.params.year);
         console.log(Date() + " - DELETE /students-an/" + province + "/" + year)
 
-        db.remove({ "province": province, "year": year });
+        var deleteDoc = ref.where('province', '==', province).where('year', '==', year).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                ref.doc(doc.id).delete();
+            })
+        })
 
         res.sendStatus(200);
     });
@@ -604,7 +547,11 @@ usersRef.set({ "province": "sevilla", "year": 2008, "gender": "male", "popillite
         var gender = req.params.gender;
         console.log(Date() + " - DELETE /students-an/" + province + "/" + year + "/" + gender);
 
-        db.remove({ "province": province, "year": year, "gender": gender });
+        var deleteDoc = ref.where('province', '==', province).where('year', '==', year).where('gender','==',gender).get().then(snapshot => {
+            snapshot.forEach(doc => {
+                ref.doc(doc.id).delete();
+            })
+        })
 
         res.sendStatus(200);
     });

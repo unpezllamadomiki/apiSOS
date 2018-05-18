@@ -6,6 +6,25 @@ angular
         console.log("List Ctrl initialized!");
         var api = "/api/v2/students-an";
 
+        function getStudents() {
+            $http.get(api + "?limit=10&offset=0").then(function successCallback(response) {
+                $scope.status = "Status: " + "All is ok";
+                $scope.students = response.data;
+                $scope.error = "";
+                $scope.offset = 0;
+            }, function errorCallback(response) {
+                console.log(response.status);
+                $scope.status = "Status: " + "Something fails";
+                switch (response.status) {
+                    case 404:
+                        $scope.error = "The table is empty. Fill it and try again";
+                        break;
+                    default:
+                        $scope.error = "Ups, something was wrong. Try it later";
+                }
+            });
+        }
+
         $scope.addStudent = function() {
             $http.post(api, $scope.newStudent).then(function successCallback(response) {
                 $scope.status = "Status: " + "All is ok";
@@ -72,25 +91,6 @@ angular
 
         }
 
-        function getStudents() {
-            $http.get(api+"?limit=10&offset=0").then(function successCallback(response) {
-                $scope.status = "Status: " + "All is ok";
-                $scope.students = response.data;
-                $scope.error = "";
-                $scope.offset = 0;
-            }, function errorCallback(response) {
-                console.log(response.status);
-                $scope.status = "Status: " + "Something fails";
-                switch (response.status) {
-                    case 404:
-                        $scope.error = "The table is empty. Fill it and try again";
-                        break;
-                    default:
-                        $scope.error = "Ups, something was wrong. Try it later";
-                }
-            });
-        }
-
         getStudents();
 
         //Funcion para paginar búsquedas
@@ -98,10 +98,11 @@ angular
 
 
         $scope.next = function() {
-            if($scope.offset>$scope.students.length){
-                
-            }else{
-            $scope.offset = $scope.offset + 10;
+            if ($scope.offset > $scope.students.length) {
+
+            }
+            else {
+                $scope.offset = $scope.offset + 10;
             }
             console.log($scope.offset);
             $http.get(api + "?limit=10" + "&offset=" + $scope.offset).then(function successCallback(response) {
