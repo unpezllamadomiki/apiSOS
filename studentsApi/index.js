@@ -46,42 +46,42 @@ var initialStudents = [{ "province": "sevilla", "year": 2008, "gender": "male", 
 
 studentsApi.register = function(app, db) {
     var ref = db.collection('students-an');
-    
-/*    function paginateQuery(db, limit) {
-    // [START cursor_paginate]
-    var first = ref
-        .orderBy('popilliterate')
-        .limit(limit);
 
-    var paginate = first.get()
-        .then((snapshot) => {
-            // ...
+    /*    function paginateQuery(db, limit) {
+        // [START cursor_paginate]
+        var first = ref
+            .orderBy('popilliterate')
+            .limit(limit);
 
-            // Get the last document
-            var last = snapshot.docs[snapshot.docs.length - 1];
+        var paginate = first.get()
+            .then((snapshot) => {
+                // ...
 
-            // Construct a new query starting at this document.
-            // Note: this will not have the desired effect if multiple
-            // cities have the exact same population value.
-            var next = ref
-                .orderBy('popilliterate')
-                .startAfter(last.data().popilliterate)
-                .limit(limit);
+                // Get the last document
+                var last = snapshot.docs[snapshot.docs.length - 1];
 
-            // Use the query for pagination
-            // [START_EXCLUDE]
-            return next.get().then((snapshot) => {
-                console.log('Num results:', snapshot.docs.length);
+                // Construct a new query starting at this document.
+                // Note: this will not have the desired effect if multiple
+                // cities have the exact same population value.
+                var next = ref
+                    .orderBy('popilliterate')
+                    .startAfter(last.data().popilliterate)
+                    .limit(limit);
+
+                // Use the query for pagination
+                // [START_EXCLUDE]
+                return next.get().then((snapshot) => {
+                    console.log('Num results:', snapshot.docs.length);
+                });
+                // [END_EXCLUDE]
             });
-            // [END_EXCLUDE]
-        });
-    // [END cursor_paginate]
+        // [END cursor_paginate]
 
-    return paginate;
-}
+        return paginate;
+    }
 
-    console.log(paginateQuery(db,10))*/
-    
+        console.log(paginateQuery(db,10))*/
+
     console.log("Registering router for students API...")
     app.get(BASE_API_PATH + "/students-an/docs", (req, res) => {
         res.redirect("https://documenter.getpostman.com/view/3891289/sos1718-08-students-an/RW1XKMBs");
@@ -118,12 +118,17 @@ studentsApi.register = function(app, db) {
     //GET A TODOS LOS RECURSOS
     app.get(BASE_API_PATH + "/students-an", (req, res) => {
         console.log(Date() + " - GET /students-an");
-        var limit = 0;
+        var limit = 100000000000000000;
+        
         if (req.query.limit != null) {
             var limit = parseInt(req.query.limit);
+            console.log(limit);
+            
         }
-
-        var offset = parseInt(req.query.offset);
+        var offset = 0;
+        if (req.query.offset != null) {
+            var offset = parseInt(req.query.offset);
+        }
 
         //BUSQUEDA
         var afrom = Number(req.query.from);
@@ -253,7 +258,7 @@ studentsApi.register = function(app, db) {
                         var query = ref.where('pophigheducation', '==', pophigheducation).orderBy('year').startAfter(offset).limit(limit).get()
                             .then(snapshot => {
                                 snapshot.forEach(doc => {
-                                   // console.log(doc.id, '=>', doc.data());
+                                    // console.log(doc.id, '=>', doc.data());
                                     respuesta.push(doc.data());
 
                                 });
@@ -284,6 +289,7 @@ studentsApi.register = function(app, db) {
                                     }
                                     else {
                                         res.send(respuesta);
+
                                     }
 
                                 })
@@ -293,26 +299,24 @@ studentsApi.register = function(app, db) {
                                 });
                         }
                         else {
-                            var cont=0;
-                            var limite=0;
-                            var query = ref.orderBy('province').get()
+                            var cont = 0;
+                            var limite = 0;
+                            var query = ref.get()
                                 .then(snapshot => {
-                                    var last = snapshot.docs[snapshot.docs.length - 1];
                                     snapshot.forEach(doc => {
-                                       // console.log(doc.id, '=>', doc.data());
-                                       if(cont>=offset && limite < limit){
-                                        respuesta.push(doc.data());
-                                        limite +=1;
-                                       }
-                                       cont+=1;
+                                        // console.log(doc.id, '=>', doc.data());
+                                        if (cont >= offset) {
+                                            if (limite < limit) {
+                                                respuesta.push(doc.data());
+                                                console.log("estoy aqui" + respuesta);
+                                                limite += 1;
+                                            }
+                                        }
+                                        cont += 1;
 
                                     });
-                                    if (respuesta.length == 0) {
-                                        res.send([]);
-                                    }
-                                    else {
-                                        res.send(respuesta);
-                                    }
+                                    console.log("ah" + respuesta);
+                                    res.send(respuesta);
 
                                 })
                                 .catch(err => {
@@ -346,6 +350,7 @@ studentsApi.register = function(app, db) {
                 snapshot.forEach(doc => {
                     //console.log(doc.id, '=>', doc.data());
                     respuesta.push(doc.data());
+                    console.log(respuesta);
 
                 });
                 if (respuesta.length == 0) {
@@ -508,7 +513,7 @@ studentsApi.register = function(app, db) {
         })
 
         res.sendStatus(200);
-        
+
     });
 
     //Borrar un subconjunto de recursos
@@ -547,7 +552,7 @@ studentsApi.register = function(app, db) {
         var gender = req.params.gender;
         console.log(Date() + " - DELETE /students-an/" + province + "/" + year + "/" + gender);
 
-        var deleteDoc = ref.where('province', '==', province).where('year', '==', year).where('gender','==',gender).get().then(snapshot => {
+        var deleteDoc = ref.where('province', '==', province).where('year', '==', year).where('gender', '==', gender).get().then(snapshot => {
             snapshot.forEach(doc => {
                 ref.doc(doc.id).delete();
             })
