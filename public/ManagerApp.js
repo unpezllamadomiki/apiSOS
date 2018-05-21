@@ -10,6 +10,10 @@ angular
             .when("/analytics",{
                 templateUrl: "analytics.html"
             })
+            .when("/students-an/registration",{
+                templateUrl: "google.html",
+                controller: "googleCtrl"
+            })
             .when("/students-an",{
                 templateUrl: "studentList.html",
                 controller: "studentListCtrl"

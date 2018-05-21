@@ -2,12 +2,11 @@
 /*global Highcharts*/
 /*global google*/
 /*global Plotly*/
-
+/*global io*/
 angular
     .module("ManagerApp")
     .controller("studentViewCtrl", ["$scope", "$http", function($scope, $http) {
         console.log("View Ctrl initialized!");
-
         var api = "/api/v2/students-an";
 
         var sort_by = function(field, reverse, primer) {
